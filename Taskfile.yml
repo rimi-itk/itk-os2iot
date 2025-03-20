@@ -1,0 +1,44 @@
+# https://taskfile.dev
+
+version: '3'
+
+# https://taskfile.dev/usage/#env-files (it seems that the first wins)
+dotenv:
+  - '.env.local'
+  - '.env'
+
+vars:
+  # https://taskfile.dev/reference/templating/
+  BASE_URL: '{{.TASK_BASE_URL | default .COMPOSE_SERVER_DOMAIN | default .COMPOSE_DOMAIN}}'
+  DOCKER_COMPOSE: '{{.TASK_DOCKER_COMPOSE | default "docker compose"}}'
+
+tasks:
+  start:
+    cmds:
+      - task compose -- pull
+      - task compose -- up --detach --remove-orphans --wait
+      - task compose -- ps
+
+  test:scorpio:get-types:
+    cmds:
+      - curl "{{.API_BASE_URL}}/types"
+    vars:
+      API_BASE_URL:
+        sh: echo "http://$(task compose --silent -- port scorpio 9090)/ngsi-ld/v1"
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+  lint:markdown:
+    cmds:
+      - docker compose run --rm markdownlint '**/*.md' --fix
+      - docker compose run --rm markdownlint '**/*.md'
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+  compose:
+    - "{{.DOCKER_COMPOSE}} {{.CLI_ARGS}}"
+
+  default:
+    cmds:
+      - task --list
+    silent: true

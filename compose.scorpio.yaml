@@ -1,0 +1,52 @@
+# https://quay.io/repository/fiware/scorpio
+# https://raw.githubusercontent.com/ScorpioBroker/ScorpioBroker/development-quarkus/compose-files/docker-compose-java-aaio-kafka.yml
+
+networks:
+  scorpio:
+
+services:
+  scorpio_zookeeper:
+    image: zookeeper
+    networks:
+      - scorpio
+
+  scorpio_kafka:
+    image: bitnami/kafka:3.5.1-debian-11-r6
+    networks:
+      - scorpio
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_LOG_RETENTION_MS: 10000
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 5000
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - scorpio_zookeeper
+
+  scorpio_postgres:
+    image: postgis/postgis
+    networks:
+      - scorpio
+    environment:
+      POSTGRES_USER: ngb
+      POSTGRES_PASSWORD: ngb
+      POSTGRES_DB: ngb
+    volumes:
+      - ./.docker/data/postgres/:/var/lib/postgresql/data/
+
+  scorpio:
+    image: scorpiobroker/all-in-one-runner:java-kafka-latest
+    networks:
+      - scorpio
+      - frontend
+    ports:
+      - "9090"
+    environment:
+      DBHOST: scorpio_postgres
+      BUSHOST: scorpio_kafka
+    depends_on:
+      - scorpio_postgres
+      - scorpio_kafka

@@ -1,0 +1,16 @@
+services:
+  scorpio:
+    env_file:
+      - .env
+      - .env.local
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}_scorpio-http.rule=Host(`scorpio.${COMPOSE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}_scorpio-http.entrypoints=web"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}_scorpio-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}_scorpio.rule=Host(`scorpio.${COMPOSE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}_scorpio.entrypoints=websecure"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}_scorpio.loadbalancer.server.port=9090"
